@@ -95,6 +95,11 @@ def create_instance(compute, instance_def, node_list, placement_group_name):
     if instance_def.machine_type:
         config['machineType'] = instance_def.machine_type
 
+    if not instance_def.image_hyperthreads:
+        config['advancedMachineFeatures'] = {
+            'threadsPerCore': 1
+        }
+
     if (instance_def.image and
             instance_def.compute_disk_type and
             instance_def.compute_disk_size_gb):
@@ -192,7 +197,7 @@ def add_instances(node_chunk):
                               "Slurm_GCP_Scripts/1.2 (GPN:SchedMD)")
         creds = compute_engine.Credentials()
         auth_http = google_auth_httplib2.AuthorizedHttp(creds, http=http)
-    compute = googleapiclient.discovery.build('compute', 'v1',
+    compute = googleapiclient.discovery.build('compute', 'alpha',
                                               http=auth_http,
                                               cache_discovery=False)
     pid = util.get_pid(node_list[0])
