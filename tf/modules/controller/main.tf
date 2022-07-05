@@ -39,8 +39,8 @@ locals {
     vpc_subnet                   = var.subnetwork_name
     zone                         = var.zone
   })
-  custom-controller-install = var.controller_startup_script != null? var.controller_startup_script : file("${path.module}/../../../scripts/custom-controller-install")
-  custom-compute-install = var.compute_startup_script != null? var.compute_startup_script : file("${path.module}/../../../scripts/custom-compute-install")
+  custom-controller-install = var.controller_startup_script != null ? var.controller_startup_script : file("${path.module}/../../../scripts/custom-controller-install")
+  custom-compute-install    = var.compute_startup_script != null ? var.compute_startup_script : file("${path.module}/../../../scripts/custom-compute-install")
 }
 
 resource "google_compute_disk" "secondary" {
@@ -51,6 +51,13 @@ resource "google_compute_disk" "secondary" {
   type = var.secondary_disk_type
   zone = var.zone
 }
+
+data "google_compute_disk" "external_home_disk" {
+  name    = "home"
+  project = var.project
+  zone    = var.zone
+}
+
 
 data "google_compute_default_service_account" "default" {}
 
