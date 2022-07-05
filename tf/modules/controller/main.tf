@@ -80,6 +80,11 @@ resource "google_compute_instance" "controller_node" {
     }
   }
 
+  attached_disk {
+    source = data.google_compute_disk.persistent_home_disk.self_link
+  }
+
+
   dynamic "attached_disk" {
     for_each = google_compute_disk.secondary
     content {
