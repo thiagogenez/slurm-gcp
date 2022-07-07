@@ -38,7 +38,7 @@ locals {
     complete_wait_time           = var.complete_wait_time
     vpc_subnet                   = var.subnetwork_name
     zone                         = var.zone
-    home_disk                    = var.home_disk
+    home_disk_name               = var.home_disk_name
     home_disk_filesystem         = var.home_disk_filesystem
   })
   custom-controller-install = var.controller_startup_script != null ? var.controller_startup_script : file("${path.module}/../../../scripts/custom-controller-install")
@@ -55,7 +55,7 @@ resource "google_compute_disk" "secondary" {
 }
 
 data "google_compute_disk" "home_disk" {
-  count = var.home_disk ? 1 : 0
+  count = var.home_disk_name != null ? 1 : 0
 
   name    = "home"
   project = var.project
@@ -87,10 +87,11 @@ resource "google_compute_instance" "controller_node" {
     for_each = data.google_compute_disk.home_disk
 
     content {
-      source      = google_compute_disk.home_disk[0].self_link
+      source      = attached_disk.value.self_link
       device_name = "home"
     }
   }
+
 
 
   dynamic "attached_disk" {

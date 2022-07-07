@@ -73,6 +73,8 @@ module "slurm_cluster_controller" {
   suspend_time                  = var.suspend_time
   complete_wait_time            = var.complete_wait_time
   zone                          = var.zone
+  home_disk_name                = var.controller_home_disk_name
+  home_disk_filesystem          = var.controller_home_disk_filesystem
 }
 
 module "slurm_cluster_login" {

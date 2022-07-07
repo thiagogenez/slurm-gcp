@@ -72,8 +72,8 @@ variable "machine_type" {
   default     = "n1-standard-2"
 }
 
-variable "home_disk" {
-  description = "Attach an external disk to use as /home"
+variable "home_disk_name" {
+  description = "Name of a disk to be attached in the controller node to be used as /home"
   type        = string
   default     = null
 }

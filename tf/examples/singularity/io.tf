@@ -81,8 +81,8 @@ variable "controller_labels" {
   default     = null
 }
 
-variable "controller_home_disk" {
-  description = "Attach an external disk to use as /home"
+variable "controller_home_disk_name" {
+  description = "Name of a disk to be attached in the controller node to be used as /home"
   type        = string
   default     = null
 }

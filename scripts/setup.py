@@ -78,7 +78,7 @@ slurmdirs = NSDict({n: Path(p) for n, p in dict.items({
 })})
 
 cfg['log_dir'] = slurmdirs.log
-cfg['slurm_cmd_path'] = dirs.prefix/'bin'
+cfg['slurm_cmd_path'] = dirs.prefix / 'bin'
 
 RESUME_TIMEOUT = 300
 SUSPEND_TIMEOUT = 300
@@ -307,7 +307,7 @@ def install_slurm_conf():
     if len(static_nodes):
         conf += "\nSuspendExcNodes={}\n".format(','.join(static_nodes))
 
-    conf_file = slurmdirs.etc/'slurm.conf'
+    conf_file = slurmdirs.etc / 'slurm.conf'
     conf_file.write_text(conf)
     shutil.chown(conf_file, user='slurm', group='slurm')
 # END install_slurm_conf()
@@ -337,18 +337,41 @@ def install_slurmdbd_conf():
     conf_resp = util.get_metadata('attributes/slurmdbd_conf_tpl')
     conf = conf_resp.format(**conf_options)
 
-    conf_file = slurmdirs.etc/'slurmdbd.conf'
+    conf_file = slurmdirs.etc / 'slurmdbd.conf'
     conf_file.write_text(conf)
     shutil.chown(conf_file, user='slurm', group='slurm')
     conf_file.chmod(0o600)
 # END install_slurmdbd_conf()
 
 
+def install_home():
+    # sanity-check before proceeding
+    if util.run(f"lsblk -n -o FSTYPE /dev/disk/by-id/google-home", get_stdout=True).stdout.strip() == '':
+        import re
+        options = ''
+
+        # feature only available for ext[2-4] and xfs filesystem
+        if re.search("^(ext[2-4]|xfs)$", cfg.home_disk_filesystem, re.IGNORECASE):
+
+            if re.search("^ext[2-4]$", cfg.home_disk_filesystem, re.IGNORECASE):
+                options = "-F"
+
+            elif 'xfs' == cfg.home_disk_filesystem:
+                options = "-f"
+
+            util.run(f"mkfs.{cfg.home_disk_filesystem} {options} /dev/disk/by-id/google-home")
+
+    # mount
+    util.run(f"mount /dev/disk/by-id/google-home /home")
+
+# END install_home()
+
+
 def install_cgroup_conf():
     """ install cgroup.conf """
     conf = util.get_metadata('attributes/cgroup_conf_tpl')
 
-    conf_file = slurmdirs.etc/'cgroup.conf'
+    conf_file = slurmdirs.etc / 'cgroup.conf'
     conf_file.write_text(conf)
     shutil.chown(conf_file, user='slurm', group='slurm')
 
@@ -358,19 +381,19 @@ def install_cgroup_conf():
             continue
         driver_range = '0'
         if part.gpu_count > 1:
-            driver_range = '[0-{}]'.format(part.gpu_count-1)
+            driver_range = '[0-{}]'.format(part.gpu_count - 1)
 
         gpu_conf += ("NodeName={}-[0-{}] Name=gpu File=/dev/nvidia{}\n"
                      .format(pid, part.max_node_count - 1, driver_range))
     if gpu_conf:
-        (slurmdirs.etc/'gres.conf').write_text(gpu_conf)
+        (slurmdirs.etc / 'gres.conf').write_text(gpu_conf)
 # END install_cgroup_conf()
 
 
 def install_meta_files():
     """ save config.yaml and download all scripts from metadata """
-    cfg.save_config(dirs.scripts/'config.yaml')
-    shutil.chown(dirs.scripts/'config.yaml', user='slurm', group='slurm')
+    cfg.save_config(dirs.scripts / 'config.yaml')
+    shutil.chown(dirs.scripts / 'config.yaml', user='slurm', group='slurm')
 
     meta_entries = [
         ('suspend.py', 'slurm-suspend'),
@@ -387,7 +410,7 @@ def install_meta_files():
         text = util.get_metadata('attributes/' + metaname)
         if not text:
             return
-        path = dirs.scripts/filename
+        path = dirs.scripts / filename
         path.write_text(text)
         path.chmod(0o755)
         shutil.chown(path, user='slurm', group='slurm')
@@ -447,7 +470,7 @@ def prepare_network_mounts(hostname, instance_type):
         return mount[1].server_ip == CONTROL_MACHINE
 
     def partition(pred, coll):
-        """ filter into 2 lists based on pred returning True or False 
+        """ filter into 2 lists based on pred returning True or False
             returns ([False], [True])
         """
         return reduce(
@@ -481,7 +504,7 @@ def setup_network_storage():
             continue
 
         log.info("Setting up mount ({}) {}{} to {}".format(
-            fs_type, server_ip+':' if fs_type != 'gcsfuse' else "",
+            fs_type, server_ip + ':' if fs_type != 'gcsfuse' else "",
             remote_mount, local_mount))
 
         local_mount.mkdirp()
@@ -553,7 +576,7 @@ def setup_nfs_exports():
 
     exportsd = Path('/etc/exports.d')
     exportsd.mkdirp()
-    with (exportsd/'slurm.exports').open('w') as f:
+    with (exportsd / 'slurm.exports').open('w') as f:
         f.write('\n')
         f.write('\n'.join(exports))
     util.run("exportfs -a")
@@ -581,13 +604,13 @@ def setup_sync_cronjob():
 
 
 def setup_jwt_key():
-    jwt_key = slurmdirs.state/'jwt_hs256.key'
+    jwt_key = slurmdirs.state / 'jwt_hs256.key'
 
     if cfg.jwt_key:
         with (jwt_key).open('w') as f:
             f.write(cfg.jwt_key)
     else:
-        util.run("dd if=/dev/urandom bs=32 count=1 >"+str(jwt_key), shell=True)
+        util.run("dd if=/dev/urandom bs=32 count=1 >" + str(jwt_key), shell=True)
 
     util.run(f"chown -R slurm:slurm {jwt_key}")
     jwt_key.chmod(0o400)
@@ -630,16 +653,17 @@ def configure_dirs():
         p.mkdirp()
         shutil.chown(p, user='slurm', group='slurm')
 
-    (dirs.scripts/'etc').symlink_to(slurmdirs.etc)
-    shutil.chown(dirs.scripts/'etc', user='slurm', group='slurm')
+    (dirs.scripts / 'etc').symlink_to(slurmdirs.etc)
+    shutil.chown(dirs.scripts / 'etc', user='slurm', group='slurm')
 
-    (dirs.scripts/'log').symlink_to(slurmdirs.log)
-    shutil.chown(dirs.scripts/'log', user='slurm', group='slurm')
+    (dirs.scripts / 'log').symlink_to(slurmdirs.log)
+    shutil.chown(dirs.scripts / 'log', user='slurm', group='slurm')
 
 
 def setup_controller():
     """ Run controller setup """
     expand_instance_templates()
+    install_home()
     install_cgroup_conf()
     install_slurm_conf()
     install_slurmdbd_conf()
@@ -653,7 +677,7 @@ def setup_controller():
     mount_fstab()
 
     try:
-        util.run(str(dirs.scripts/'custom-controller-install'))
+        util.run(str(dirs.scripts / 'custom-controller-install'))
     except Exception:
         # Ignore blank files with no shell magic.
         pass
@@ -662,7 +686,7 @@ def setup_controller():
         cnfdir = Path('/etc/my.cnf.d')
         if not cnfdir.exists():
             cnfdir = Path('/etc/mysql/conf.d')
-        (cnfdir/'mysql_slurm.cnf').write_text("""
+        (cnfdir / 'mysql_slurm.cnf').write_text("""
 [mysqld]
 bind-address = 127.0.0.1
 """)
@@ -710,7 +734,7 @@ def setup_login():
     util.run("systemctl restart munge")
 
     try:
-        util.run(str(dirs.scripts/'custom-compute-install'))
+        util.run(str(dirs.scripts / 'custom-compute-install'))
     except Exception:
         # Ignore blank files with no shell magic.
         pass
@@ -735,7 +759,7 @@ def setup_compute():
             time.sleep(5)
 
     try:
-        util.run(str(dirs.scripts/'custom-compute-install'))
+        util.run(str(dirs.scripts / 'custom-compute-install'))
     except Exception:
         # Ignore blank files with no shell magic.
         pass
