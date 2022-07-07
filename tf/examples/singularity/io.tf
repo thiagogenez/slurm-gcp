@@ -81,6 +81,18 @@ variable "controller_labels" {
   default     = null
 }
 
+variable "controller_home_disk" {
+  description = "Attach an external disk to use as /home"
+  type        = string
+  default     = null
+}
+
+variable "controller_home_disk_filesystem" {
+  description = "Filesystem to format the disk if it is a blank one"
+  type        = string
+  default     = "ext4"
+}
+
 variable "controller_secondary_disk" {
   description = "Create secondary disk mounted to controller node"
   type        = bool

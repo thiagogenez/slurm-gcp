@@ -72,6 +72,17 @@ variable "machine_type" {
   default     = "n1-standard-2"
 }
 
+variable "home_disk" {
+  description = "Attach an external disk to use as /home"
+  type        = string
+  default     = null
+}
+
+variable "home_disk_filesystem" {
+  description = "Filesystem to format the disk if it is a blank one"
+  type        = string
+  default     = "ext4"
+}
 variable "secondary_disk" {
   description = "Create secondary disk mounted to controller node"
   type        = bool
