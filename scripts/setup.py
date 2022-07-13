@@ -345,24 +345,36 @@ def install_slurmdbd_conf():
 
 
 def install_home():
-    # sanity-check before proceeding
-    if util.run(f"lsblk -n -o FSTYPE /dev/disk/by-id/google-home", get_stdout=True).stdout.strip() == '':
+    home_disk = '/dev/disk/by-id/google-home'
+
+    # sanity-check: Has been the disk attached?
+    lsblk_call = util.run(f"lsblk -n -o FSTYPE {home_disk}", get_stdout=True)
+    if lsblk_call.returncode:
+        log.error(f"Disk {home_disk} not found")
+        return
+
+    # is a empty disk? Format it.
+    if lsblk_call.stdout.strip() == '':
         import re
-        options = ''
 
-        # feature only available for ext[2-4] and xfs filesystem
-        if re.search("^(ext[2-4]|xfs)$", cfg.home_disk_filesystem, re.IGNORECASE):
+        # sanity-check: is a valid filesystem? (ext[2-4] and xfs filesystem allowed)
+        if not re.search("^(ext[2-4]|xfs)$", cfg.home_disk_filesystem, re.IGNORECASE):
+            log.error(f"Unsupported filesystem: {cfg.home_disk_filesystem}")
+            return
 
-            if re.search("^ext[2-4]$", cfg.home_disk_filesystem, re.IGNORECASE):
-                options = "-F"
+        # safe to proceed and format the disk
+        options = '-F'
+        if 'xfs' == cfg.home_disk_filesystem:
+            options = "-f"
+        mkfs_call = util.run(f"mkfs.{cfg.home_disk_filesystem} {options} {home_disk}")
 
-            elif 'xfs' == cfg.home_disk_filesystem:
-                options = "-f"
+        # sanity-check: was it a successful format?
+        if mkfs_call.returncode:
+            log.error(f"Error while formatting the disk attached at {home_disk}")
+            return
 
-            util.run(f"mkfs.{cfg.home_disk_filesystem} {options} /dev/disk/by-id/google-home")
-
-    # mount
-    util.run(f"mount /dev/disk/by-id/google-home /home")
+    # safe to mount and continue mount
+    util.run(f"mount {home_disk} /home")
 
 # END install_home()
 

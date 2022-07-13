@@ -159,6 +159,7 @@ class cached_property:
     """
     Descriptor for creating a property that is computed once and cached
     """
+
     def __init__(self, factory):
         self._attr_name = factory.__name__
         self._factory = factory
@@ -224,6 +225,7 @@ class Config(NSDict):
                   'login_node_count',
                   'cloudsql',
                   'partitions',
+                  'home_disk_filesystem'
                   )
 
     def __init__(self, *args, **kwargs):
@@ -322,7 +324,7 @@ def ensure_execute(operation):
         except googleapiclient.errors.HttpError as e:
             if "Rate Limit Exceeded" in str(e):
                 retry += 1
-                sleep = min(sleep*2, max_sleep)
+                sleep = min(sleep * 2, max_sleep)
                 log.error(f"retry:{retry} sleep:{sleep} '{e}'")
                 time.sleep(sleep)
                 continue

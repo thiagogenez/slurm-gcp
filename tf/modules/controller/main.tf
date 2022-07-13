@@ -38,7 +38,6 @@ locals {
     complete_wait_time           = var.complete_wait_time
     vpc_subnet                   = var.subnetwork_name
     zone                         = var.zone
-    home_disk_name               = var.home_disk_name
     home_disk_filesystem         = var.home_disk_filesystem
   })
   custom-controller-install = var.controller_startup_script != null ? var.controller_startup_script : file("${path.module}/../../../scripts/custom-controller-install")
