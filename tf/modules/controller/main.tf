@@ -56,7 +56,7 @@ resource "google_compute_disk" "secondary" {
 data "google_compute_disk" "home_disk" {
   count = var.home_disk_name != null ? 1 : 0
 
-  name    = "home"
+  name    = var.home_disk_name
   project = var.project
   zone    = var.zone
 }
